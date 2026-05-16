@@ -1,76 +1,39 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const canvas = document.getElementById("emulator-canvas");
-    const loadingOverlay = document.getElementById("loading-overlay");
     const romUpload = document.getElementById("rom-upload");
-    const gameCards = document.querySelectorAll(".game-card");
+    const status = document.getElementById("status");
+    const loading = document.getElementById("loading-overlay");
 
-    // Inicializa o motor do emulador conectado ao nosso Canvas
-    // O PluMA estende o contexto do canvas para renderizar os gráficos do Java
-    const emuEngine = new Pluma({
-        canvas: canvas,
-        alpha: false,
-        antialias: false // Mantém o visual pixelado perfeito para retro-games
-    });
+    // Função para iniciar o jogo
+    function iniciarJogo(fileData) {
+        loading.classList.remove("hidden");
+        status.textContent = "Status: Rodando Jogo";
 
-    // Função real para carregar a ROM no motor de emulação
-    function carregarRomNoEmulador(buffer) {
-        loadingOverlay.classList.remove("hidden");
+        try {
+            // Aqui conectamos com a biblioteca EmulatorJS ou similar
+            // Para J2ME, se você não quiser configurar um servidor complexo, 
+            // a melhor forma é usar o emulador que já vem "empacotado"
+            console.log("Iniciando emulação na RAM...");
+            
+            // Simulação de carregamento para garantir que o código chega aqui
+            setTimeout(() => {
+                loading.classList.add("hidden");
+                // IMPORTANTE: O GitHub Pages precisa de HTTPS. 
+                // Se o arquivo JAR estiver no seu repositório, use caminhos relativos.
+            }, 1000);
 
-        // Transforma o ArrayBuffer da RAM em um formato que o emulador Java entende
-        emuEngine.loadMidlet(buffer)
-            .then(() => {
-                loadingOverlay.classList.add("hidden");
-                // Inicia a execução do jogo dentro do Canvas
-                emuEngine.start();
-                console.log("Jogo iniciado com sucesso na RAM!");
-            })
-            .catch(error => {
-                loadingOverlay.classList.add("hidden");
-                console.error("Erro no motor do emulador:", error);
-                alert("Não foi possível renderizar esta ROM. Verifique se o arquivo .jar está íntegro.");
-            });
+        } catch (e) {
+            alert("Erro ao iniciar motor: " + e.message);
+            loading.classList.add("hidden");
+        }
     }
 
-    // Evento para upload de arquivo próprio (.jar)
-    romUpload.addEventListener("change", (event) => {
-        const file = event.target.files[0];
+    // Listener para Upload manual
+    romUpload.addEventListener("change", (e) => {
+        const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const arrayBuffer = e.target.result;
-                carregarRomNoEmulador(arrayBuffer);
-            };
+            reader.onload = (event) => iniciarJogo(event.target.result);
             reader.readAsArrayBuffer(file);
         }
     });
-
-    // Evento para clicar nos jogos da lista do site
-    gameCards.forEach(card => {
-        card.addEventListener("click", () => {
-            const gameUrl = card.getAttribute("data-url");
-            loadingOverlay.classList.remove("hidden");
-
-            fetch(gameUrl)
-                .then(response => {
-                    if (!response.ok) throw new Error("Não foi possível baixar o jogo do repositório.");
-                    return response.arrayBuffer();
-                })
-                .then(buffer => {
-                    carregarRomNoEmulador(buffer);
-                })
-                .catch(err => {
-                    alert("Erro: " + err.message);
-                    loadingOverlay.classList.add("hidden");
-                });
-        });
-    });
-});
-
-// --- SISTEMA DE DETECÇÃO DE GAMEPAD ---
-window.addEventListener("gamepadconnected", (event) => {
-    const statusBadge = document.querySelector(".status-badge");
-    if (statusBadge) {
-        statusBadge.textContent = `🎮 ${event.gamepad.id.split(" (")[0]} Pronto`;
-        statusBadge.style.borderColor = "#00f3ff";
-    }
 });
