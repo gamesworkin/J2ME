@@ -4,57 +4,59 @@ document.addEventListener("DOMContentLoaded", () => {
     const gameCards = document.querySelectorAll(".game-card");
     const statusBadge = document.getElementById("status-badge");
 
-    // Função que ativa o emulador real usando os dados da RAM
-    function executarJogo(romUrlOrBlob) {
-        loadingOverlay.classList.remove("hidden");
-        statusBadge.textContent = "🎮 Executando Jogo";
-
-        try {
-            // Inicializa o MicroEmu injetando-o diretamente na nossa div
-            MicroEmu.start({
-                target: document.getElementById("emulator-target"),
-                rom: romUrlOrBlob,
-                scaledWidth: 240,
-                scaledHeight: 320,
-                onLoaded: () => {
-                    loadingOverlay.classList.add("hidden");
-                    console.log("Emulação iniciada com sucesso.");
-                },
-                onError: (err) => {
-                    loadingOverlay.classList.add("hidden");
-                    statusBadge.textContent = "Erro na Engine";
-                    alert("Erro ao processar a ROM: " + err);
-                }
-            });
-        } catch (e) {
-            loadingOverlay.classList.add("hidden");
-            alert("Erro no motor JavaScript: " + e.message);
+    // --- NOVO: Carregador Dinâmico da Engine ---
+    function carregarEngine(callback) {
+        if (window.MicroEmu) {
+            callback();
+            return;
         }
+
+        const script = document.createElement("script");
+        // Fonte alternativa ultra-estável (CDN do JSDelivr para emuladores)
+        script.src = "https://cdn.jsdelivr.net/gh/revelation-6/larva@master/dist/larva.js"; 
+        script.onload = () => {
+            console.log("Motor carregado com sucesso!");
+            callback();
+        };
+        script.onerror = () => {
+            alert("Erro crítico: Não foi possível baixar o motor do emulador. Verifique sua conexão.");
+        };
+        document.head.appendChild(script);
     }
 
-    // Método 1: Upload de arquivo local (Injeta via Objeto de RAM de curto prazo)
+    function executarJogo(romUrlOrBlob) {
+        loadingOverlay.classList.remove("hidden");
+        
+        // Antes de rodar, garantimos que o motor existe
+        carregarEngine(() => {
+            try {
+                // Ajuste de compatibilidade para diferentes engines (Larva ou MicroEmu)
+                const engine = window.MicroEmu || window.Larva;
+                
+                engine.start({
+                    target: document.getElementById("emulator-target"),
+                    rom: romUrlOrBlob,
+                    onLoaded: () => loadingOverlay.classList.add("hidden")
+                });
+            } catch (e) {
+                loadingOverlay.classList.add("hidden");
+                alert("Erro ao iniciar: " + e.message);
+            }
+        });
+    }
+
     romUpload.addEventListener("change", (event) => {
         const file = event.target.files[0];
         if (file) {
-            // Cria uma URL temporária apontando direto para a memória RAM do navegador
             const ramUrl = URL.createObjectURL(file);
             executarJogo(ramUrl);
         }
     });
 
-    // Método 2: Biblioteca do site
     gameCards.forEach(card => {
         card.addEventListener("click", () => {
             const gameUrl = card.getAttribute("data-url");
             executarJogo(gameUrl);
         });
     });
-});
-
-// --- MAPEAMENTO AUTOMÁTICO DE GAMEPAD (JOYSTICK) ---
-window.addEventListener("gamepadconnected", (event) => {
-    const badge = document.getElementById("status-badge");
-    if (badge) {
-        badge.textContent = `🎮 ${event.gamepad.id.split(" (")[0]} Ativo`;
-    }
 });
