@@ -1,39 +1,60 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const loadingOverlay = document.getElementById("loading-overlay");
     const romUpload = document.getElementById("rom-upload");
-    const status = document.getElementById("status");
-    const loading = document.getElementById("loading-overlay");
+    const gameCards = document.querySelectorAll(".game-card");
+    const statusBadge = document.getElementById("status-badge");
 
-    // Função para iniciar o jogo
-    function iniciarJogo(fileData) {
-        loading.classList.remove("hidden");
-        status.textContent = "Status: Rodando Jogo";
+    // Função que ativa o emulador real usando os dados da RAM
+    function executarJogo(romUrlOrBlob) {
+        loadingOverlay.classList.remove("hidden");
+        statusBadge.textContent = "🎮 Executando Jogo";
 
         try {
-            // Aqui conectamos com a biblioteca EmulatorJS ou similar
-            // Para J2ME, se você não quiser configurar um servidor complexo, 
-            // a melhor forma é usar o emulador que já vem "empacotado"
-            console.log("Iniciando emulação na RAM...");
-            
-            // Simulação de carregamento para garantir que o código chega aqui
-            setTimeout(() => {
-                loading.classList.add("hidden");
-                // IMPORTANTE: O GitHub Pages precisa de HTTPS. 
-                // Se o arquivo JAR estiver no seu repositório, use caminhos relativos.
-            }, 1000);
-
+            // Inicializa o MicroEmu injetando-o diretamente na nossa div
+            MicroEmu.start({
+                target: document.getElementById("emulator-target"),
+                rom: romUrlOrBlob,
+                scaledWidth: 240,
+                scaledHeight: 320,
+                onLoaded: () => {
+                    loadingOverlay.classList.add("hidden");
+                    console.log("Emulação iniciada com sucesso.");
+                },
+                onError: (err) => {
+                    loadingOverlay.classList.add("hidden");
+                    statusBadge.textContent = "Erro na Engine";
+                    alert("Erro ao processar a ROM: " + err);
+                }
+            });
         } catch (e) {
-            alert("Erro ao iniciar motor: " + e.message);
-            loading.classList.add("hidden");
+            loadingOverlay.classList.add("hidden");
+            alert("Erro no motor JavaScript: " + e.message);
         }
     }
 
-    // Listener para Upload manual
-    romUpload.addEventListener("change", (e) => {
-        const file = e.target.files[0];
+    // Método 1: Upload de arquivo local (Injeta via Objeto de RAM de curto prazo)
+    romUpload.addEventListener("change", (event) => {
+        const file = event.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => iniciarJogo(event.target.result);
-            reader.readAsArrayBuffer(file);
+            // Cria uma URL temporária apontando direto para a memória RAM do navegador
+            const ramUrl = URL.createObjectURL(file);
+            executarJogo(ramUrl);
         }
     });
+
+    // Método 2: Biblioteca do site
+    gameCards.forEach(card => {
+        card.addEventListener("click", () => {
+            const gameUrl = card.getAttribute("data-url");
+            executarJogo(gameUrl);
+        });
+    });
+});
+
+// --- MAPEAMENTO AUTOMÁTICO DE GAMEPAD (JOYSTICK) ---
+window.addEventListener("gamepadconnected", (event) => {
+    const badge = document.getElementById("status-badge");
+    if (badge) {
+        badge.textContent = `🎮 ${event.gamepad.id.split(" (")[0]} Ativo`;
+    }
 });
