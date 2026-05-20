@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Retro Arena</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>JAVA RETRO ARENA</h1>
+
+    <div class="upload-box">
+        <input type="file" id="romUpload" accept=".jar,.jad">
+        <button onclick="uploadROM()">Abrir ROM</button>
+    </div>
+</header>
+
+<section class="hero">
+    <h2>Jogue clássicos Java diretamente do navegador</h2>
+</section>
+
+<section id="gamesContainer" class="games-grid"></section>
+
+<section class="player-area">
+    <canvas id="gameCanvas"></canvas>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>

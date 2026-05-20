@@ -1,0 +1,19 @@
+[
+    {
+        "name": "Asphalt 3",
+        "file": "games/asphalt3.jar",
+        "thumb": "thumbs/asphalt3.jpg"
+    },
+
+    {
+        "name": "PES 2011",
+        "file": "games/pes2011.jar",
+        "thumb": "thumbs/pes2011.jpg"
+    },
+
+    {
+        "name": "Sonic",
+        "file": "games/sonic.jar",
+        "thumb": "thumbs/sonic.jpg"
+    }
+]
