@@ -3,31 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Java Retro Arena</title>
-
+    <title>J2ME Cloud Gaming</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-<header>
-    <h1>JAVA RETRO ARENA</h1>
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-microchip"></i> <span>JAVA</span>RETRO
+        </div>
+        <p>Emulação de alta performance via RAM</p>
+    </header>
 
-    <div class="upload-box">
-        <input type="file" id="romUpload" accept=".jar,.jad">
-        <button onclick="uploadROM()">Abrir ROM</button>
-    </div>
-</header>
+    <main class="container">
+        <section class="emulator-view">
+            <div class="emulator-screen">
+                <canvas id="emulator-canvas" width="240" height="320"></canvas>
+                <div id="status-overlay">
+                    <div class="loader-spinner"></div>
+                    <span id="status-text">Aguardando comando...</span>
+                </div>
+            </div>
 
-<section class="hero">
-    <h2>Jogue clássicos Java diretamente do navegador</h2>
-</section>
+            <div class="upload-zone">
+                <label for="file-input" class="btn-upload">
+                    <i class="fa-solid fa-folder-open"></i> Carregar .JAR Próprio
+                </label>
+                <input type="file" id="file-input" accept=".jar">
+            </div>
+        </section>
 
-<section id="gamesContainer" class="games-grid"></section>
+        <section class="library-section">
+            <h2 class="section-title"><i class="fa-solid fa-gamepad"></i> Biblioteca da Nuvem</h2>
+            
+            <div class="games-grid">
+                <div class="game-card" data-rom="roms/bounce.jar">
+                    <div class="thumb-container">
+                        <img src="thumbs/bounce.jpg" alt="Bounce Tales" class="game-thumb">
+                        <div class="card-overlay">
+                            <button class="btn-play-now">JOGAR AGORA</button>
+                        </div>
+                    </div>
+                    <div class="game-info">
+                        <h3>Bounce Tales</h3>
+                        <span class="category">Aventura / Puzzle</span>
+                    </div>
+                </div>
 
-<section class="player-area">
-    <canvas id="gameCanvas"></canvas>
-</section>
+                <div class="game-card" data-rom="roms/sonic.jar">
+                    <div class="thumb-container">
+                        <img src="thumbs/sonic.jpg" alt="Sonic Advance" class="game-thumb">
+                        <div class="card-overlay">
+                            <button class="btn-play-now">JOGAR AGORA</button>
+                        </div>
+                    </div>
+                    <div class="game-info">
+                        <h3>Sonic Advance</h3>
+                        <span class="category">Plataforma / Ação</span>
+                    </div>
+                </div>
 
-<script src="script.js"></script>
+                <div class="game-card" data-rom="roms/doom.jar">
+                    <div class="thumb-container">
+                        <img src="thumbs/doom.jpg" alt="Doom RPG" class="game-thumb">
+                        <div class="card-overlay">
+                            <button class="btn-play-now">JOGAR AGORA</button>
+                        </div>
+                    </div>
+                    <div class="game-info">
+                        <h3>Doom RPG</h3>
+                        <span class="category">RPG / FPS</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/gh/nnres/MicroEmu-Web@master/dist/microemu.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
