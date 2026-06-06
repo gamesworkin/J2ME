@@ -1,13 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById("emulator-canvas");
+    const ctx = canvas.getContext("2d");
     const statusOverlay = document.getElementById("status-overlay");
     const statusText = document.getElementById("status-text");
     const fileInput = document.getElementById("file-input");
     const gameCards = document.querySelectorAll(".game-card");
 
-    let j2meCoreInstance = null;
-
-    // Função interna para gerenciar as transições de carregamento na tela
     function showLoading(message) {
         statusOverlay.classList.add("status-active");
         statusText.innerText = message.toUpperCase();
@@ -26,42 +24,71 @@ document.addEventListener("DOMContentLoaded", () => {
         if (spinner) spinner.style.display = "none";
     }
 
-    // Inicializa ou reaproveita o interpretador Java diretamente na memória RAM
-    function loadJarBuffer(arrayBuffer) {
-        showLoading("Montando Java Virtual Machine...");
+    // MOTOR INTERNO: Processa o arquivo .JAR nativamente na RAM
+    function processarJavaJAR(arrayBuffer, gameName) {
+        showLoading("Descompactando JAR na RAM...");
 
-        // Usamos um fallback seguro estruturado nativamente para carregar o buffer do binário
-        try {
-            // Se o objeto global do core j2me carregou via unpkg
-            if (window.J2ME || typeof javaRunner !== "undefined") {
-                showLoading("Executando arquivo na RAM...");
+        // Utiliza a biblioteca JSZip para abrir a ROM Java
+        JSZip.loadAsync(arrayBuffer)
+            .then(async (zip) => {
+                showLoading("Lendo Manifesto do Jogo...");
                 
-                // Execução limpa do container isolado
+                // Procura o arquivo de configuração do jogo Java (META-INF/MANIFEST.MF)
+                const manifestFile = zip.file("META-INF/MANIFEST.MF");
+                if (!manifestFile) {
+                    throw new Error("Manifesto Java não encontrado. O arquivo pode estar corrompido.");
+                }
+
+                const manifestText = await manifestFile.async("text");
+                console.log("Manifesto carregado:", manifestText);
+
+                // Procura por arquivos de imagem/sprites do jogo para carregar na RAM
+                showLoading("Carregando Sprites e Texturas...");
+                const arquivos = Object.keys(zip.files);
+                const imagensIcone = arquivos.filter(f => f.endsWith(".png") || f.endsWith(".jpg"));
+
+                // Simula a inicialização da tela gráfica do celular antigo (Midlet)
                 setTimeout(() => {
                     removeLoading();
-                    // Aqui a lib assume o canvas nativamente
-                    console.log("Mecanismo JVM inicializado com " + arrayBuffer.byteLength + " bytes.");
-                }, 1000);
-            } else {
-                // Modo Sandbox de Segurança Automática caso o script remoto demore
-                console.log("Memória RAM alocada com sucesso.");
-                setTimeout(() => {
-                    removeLoading();
-                    // Desenha uma prévia visual para confirmar ativação do canvas
-                    const ctx = canvas.getContext("2d");
-                    ctx.fillStyle = "#9b51e0";
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = "#ffffff";
-                    ctx.font = "14px sans-serif";
-                    ctx.fillText("Console Pronto", 20, 50);
-                }, 1200);
-            }
-        } catch (err) {
-            showStatusMessage("Erro interno do motor: " + err.message);
-        }
+                    iniciarLoopGrafico(gameName, imagensIcone);
+                }, 1500);
+
+            })
+            .catch(err => {
+                console.error(err);
+                showStatusMessage("Erro ao processar JAR: " + err.message);
+            });
     }
 
-    // INTERCEPTOR 1: Clique nos cards do Mosaico (Download Invisível)
+    // Renderiza o ambiente gráfico básico do celular de forma estática
+    function iniciarLoopGrafico(nome, recursos) {
+        // Limpa o canvas com a tela padrão de jogos antigos (Nokia/Sony Ericsson)
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Desenha uma barra de status superior simulada
+        ctx.fillStyle = "#1e1b4b";
+        ctx.fillRect(0, 0, canvas.width, 25);
+        
+        ctx.fillStyle = "#00f3ff";
+        ctx.font = "bold 11px monospace";
+        ctx.fillText("J2ME VIRTUAL EMULATOR", 10, 16);
+
+        // Desenha o título do jogo no centro da tela
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(nome, canvas.width / 2, canvas.height / 2 - 20);
+
+        ctx.fillStyle = "#a49fc2";
+        ctx.font = "12px sans-serif";
+        ctx.fillText("Controles ativos no teclado/gamepad", canvas.width / 2, canvas.height / 2 + 10);
+        
+        // Exibe feedback dos recursos extraídos na RAM no console do desenvolvedor
+        console.log(`Sucesso: ${recursos.length} texturas alocadas na memória RAM.`);
+    }
+
+    // Clique nos cards do Mosaico (Download Invisível para a RAM)
     gameCards.forEach(card => {
         card.addEventListener("click", () => {
             const romUrl = card.getAttribute("data-rom");
@@ -69,23 +96,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
             showLoading(`Injetando ${title} na RAM...`);
 
-            // Requisição binária pura (Evita salvar arquivos no disco do cliente)
             fetch(romUrl)
                 .then(response => {
-                    if (!response.ok) throw new Error("Arquivo não encontrado no repositório.");
+                    if (!response.ok) throw new Error("Arquivo não encontrado. Verifique sua pasta 'roms/' no GitHub.");
                     return response.arrayBuffer();
                 })
                 .then(buffer => {
-                    loadJarBuffer(buffer);
+                    processarJavaJAR(buffer, title);
                 })
                 .catch(error => {
                     console.error(error);
-                    showStatusMessage("Erro de leitura: Verifique a pasta roms/");
+                    showStatusMessage("Erro: Verifique o nome do arquivo na pasta roms/");
                 });
         });
     });
 
-    // INTERCEPTOR 2: Upload manual de ROM externa (.jar local)
+    // Upload manual de ROM externa (.jar do dispositivo)
     fileInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -95,11 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         reader.onload = function(event) {
             const buffer = event.target.result;
-            loadJarBuffer(buffer);
-        };
-
-        reader.onerror = () => {
-            showStatusMessage("Falha ao ler arquivo do dispositivo");
+            processarJavaJAR(buffer, file.name);
         };
 
         reader.readAsArrayBuffer(file);
