@@ -3,84 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>J2ME Cloud Gaming</title>
+    <title>Java Gaming Universe</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@webvm/j2me-core@1.0.4/dist/j2me.js" defer></script>
 </head>
 <body>
 
-    <header>
-        <div class="logo">
-            <i class="fa-solid fa-microchip"></i> <span>JAVA</span>RETRO
-        </div>
-        <p>Emulação de alta performance via RAM</p>
+    <div class="animated-bg"></div>
+
+    <header class="main-header">
+        <div class="logo"><i class="fa-solid fa-bolt-lightning"></i> NEXUS<span>J2ME</span></div>
+        <p>Console Virtual Estático • Carregamento em RAM</p>
     </header>
 
-    <main class="container">
-        <section class="emulator-view">
-            <div class="emulator-screen">
-                <canvas id="emulator-canvas" width="240" height="320"></canvas>
-                <div id="status-overlay">
-                    <div class="loader-spinner"></div>
-                    <span id="status-text">Aguardando comando...</span>
+    <div class="dashboard-container">
+        
+        <aside class="player-sidebar">
+            <div class="sticky-player-box">
+                <div class="emulator-screen-wrapper">
+                    <canvas id="emulator-canvas" width="240" height="320"></canvas>
+                    
+                    <div id="status-overlay" class="status-active">
+                        <div class="neon-spinner"></div>
+                        <span id="status-text">SELECIONE UM JOGO</span>
+                    </div>
+                </div>
+
+                <div class="upload-area">
+                    <p>Tem um arquivo .JAR próprio?</p>
+                    <label for="file-input" class="neon-upload-btn">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Injetar da Máquina
+                    </label>
+                    <input type="file" id="file-input" accept=".jar">
                 </div>
             </div>
+        </aside>
 
-            <div class="upload-zone">
-                <label for="file-input" class="btn-upload">
-                    <i class="fa-solid fa-folder-open"></i> Carregar .JAR Próprio
-                </label>
-                <input type="file" id="file-input" accept=".jar">
-            </div>
-        </section>
-
-        <section class="library-section">
-            <h2 class="section-title"><i class="fa-solid fa-gamepad"></i> Biblioteca da Nuvem</h2>
+        <main class="games-mosaic-wrapper">
+            <h2 class="grid-title"><i class="fa-solid fa-clapperboard"></i> Escolha seu Clássico</h2>
             
             <div class="games-grid">
-                <div class="game-card" data-rom="https://raw.githubusercontent.com/gamesworkin/J2ME/main/roms/diam.jar">
-                    <div class="thumb-container">
-                        <img src="https://m.media-amazon.com/images/M/MV5BMGM3MjM0NTItYTI5YS00MGNhLWI4OTYtOTRlNzQ1Y2U3Mjg0XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg" alt="Diamond Rush" class="game-thumb">
-                        <div class="card-overlay">
-                            <button class="btn-play-now">JOGAR AGORA</button>
+                <div class="game-card" data-rom="roms/diam.jar">
+                    <div class="thumb-frame">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSRnF0-3qrJFTgBWVE5f_fChW8Hx1n9INIjXG0-lnGEZL0GufUXzpuNl66Y&s=10" alt="Diamond Rush" class="game-thumb">
+                        <div class="hover-glow-effect">
+                            <i class="fa-solid fa-circle-play"></i>
                         </div>
                     </div>
-                    <div class="game-info">
+                    <div class="card-details">
                         <h3>Diamond Rush</h3>
-                        <span class="category">Aventura / Puzzle</span>
+                        <span class="badge adventure">Nokia Clássico</span>
                     </div>
                 </div>
 
                 <div class="game-card" data-rom="roms/sonic.jar">
-                    <div class="thumb-container">
+                    <div class="thumb-frame">
                         <img src="thumbs/sonic.jpg" alt="Sonic Advance" class="game-thumb">
-                        <div class="card-overlay">
-                            <button class="btn-play-now">JOGAR AGORA</button>
+                        <div class="hover-glow-effect">
+                            <i class="fa-solid fa-circle-play"></i>
                         </div>
                     </div>
-                    <div class="game-info">
+                    <div class="card-details">
                         <h3>Sonic Advance</h3>
-                        <span class="category">Plataforma / Ação</span>
+                        <span class="badge action">Sega Mobile</span>
                     </div>
                 </div>
 
                 <div class="game-card" data-rom="roms/doom.jar">
-                    <div class="thumb-container">
+                    <div class="thumb-frame">
                         <img src="thumbs/doom.jpg" alt="Doom RPG" class="game-thumb">
-                        <div class="card-overlay">
-                            <button class="btn-play-now">JOGAR AGORA</button>
+                        <div class="hover-glow-effect">
+                            <i class="fa-solid fa-circle-play"></i>
                         </div>
                     </div>
-                    <div class="game-info">
+                    <div class="card-details">
                         <h3>Doom RPG</h3>
-                        <span class="category">RPG / FPS</span>
+                        <span class="badge rpg">Id Software</span>
                     </div>
                 </div>
-            </div>
-        </section>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/gh/nnres/MicroEmu-Web@master/dist/microemu.js"></script>
+                </div>
+        </main>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
