@@ -1,63 +1,154 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
+:root {
+    --bg: #050505;
+    --card: #121212;
+    --accent: #bc13fe; /* Roxo Neon */
+    --cyan: #00f3ff;
+    --text: #ffffff;
 }
 
 body {
-    background: #050505;
-    color: white;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    overflow-x: hidden;
 }
 
 header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    background: #0d0d0d;
-    border-bottom: 1px solid #222;
-}
-
-header h1 {
-    color: #00ffb3;
-    letter-spacing: 3px;
-}
-
-.hero {
-    padding: 40px;
+    padding: 40px 20px;
     text-align: center;
+    background: radial-gradient(circle, #1a0a2e 0%, #050505 100%);
 }
 
-.hero h2 {
+.logo span {
+    color: var(--accent);
+    text-shadow: 0 0 15px var(--accent);
+    font-weight: 900;
     font-size: 2rem;
-    color: #ddd;
+}
+
+.container {
+    max-width: 1300px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 50px;
+    padding: 20px;
+}
+
+/* --- ÁREA DO EMULADOR --- */
+.emulator-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.emulator-screen {
+    width: 320px;
+    height: 480px;
+    background: #000;
+    border: 4px solid #222;
+    border-radius: 15px;
+    position: relative;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    overflow: hidden;
+}
+
+#emulator-canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+}
+
+#status-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+/* --- GALERIA DE CARDS (O CORAÇÃO DO DESIGN) --- */
+.library-section {
+    width: 100%;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    border-left: 4px solid var(--cyan);
+    padding-left: 15px;
 }
 
 .games-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-    padding: 30px;
+    gap: 25px;
 }
 
 .game-card {
-    background: #101010;
-    border-radius: 16px;
+    background: var(--card);
+    border-radius: 12px;
     overflow: hidden;
-    transition: 0.3s;
-    border: 1px solid #1f1f1f;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid #222;
 }
 
+/* Animação ao passar o mouse */
 .game-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0 20px rgba(0,255,179,0.3);
+    transform: translateY(-12px) scale(1.03);
+    border-color: var(--accent);
+    box-shadow: 0 10px 30px rgba(188, 19, 254, 0.3);
 }
 
-.game-card img {
+.thumb-container {
     width: 100%;
-    height: 260px;
+    height: 280px;
+    position: relative;
+    overflow: hidden;
+}
+
+.game-thumb {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.game-card:hover .game-thumb {
+    transform: scale(1.1);
+    filter: blur(2px) brightness(0.5);
+}
+
+/* Overlay que aparece no hover */
+.card-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.game-card:hover .card-overlay {
+    opacity: 1;
+}
+
+.btn-play-now {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 0 15px var(--accent);
 }
 
 .game-info {
@@ -65,30 +156,40 @@ header h1 {
 }
 
 .game-info h3 {
-    margin-bottom: 10px;
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text);
 }
 
-.play-btn {
-    width: 100%;
-    padding: 12px;
-    background: #00ffb3;
-    color: black;
-    border: none;
-    border-radius: 10px;
+.game-info .category {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Botão Upload */
+.upload-zone {
+    margin-top: 10px;
+}
+.btn-upload {
+    background: #1a1a1a;
+    padding: 12px 25px;
+    border-radius: 8px;
     cursor: pointer;
-    font-weight: bold;
+    border: 1px dashed #444;
+    transition: 0.3s;
 }
-
-.player-area {
-    display: flex;
-    justify-content: center;
-    padding: 40px;
+.btn-upload:hover {
+    background: #252525;
+    border-color: var(--cyan);
+    color: var(--cyan);
 }
+input[type="file"] { display: none; }
 
-#gameCanvas {
-    width: 360px;
-    height: 640px;
-    background: black;
-    border-radius: 20px;
-    border: 3px solid #00ffb3;
+/* Mobile */
+@media (max-width: 600px) {
+    .games-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    .thumb-container { height: 200px; }
 }
