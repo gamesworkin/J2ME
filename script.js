@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById("emulator-canvas");
-    const ctx = canvas.getContext("2d");
     const statusOverlay = document.getElementById("status-overlay");
     const statusText = document.getElementById("status-text");
     const fileInput = document.getElementById("file-input");
@@ -24,71 +23,53 @@ document.addEventListener("DOMContentLoaded", () => {
         if (spinner) spinner.style.display = "none";
     }
 
-    // MOTOR INTERNO: Processa o arquivo .JAR nativamente na RAM
-    function processarJavaJAR(arrayBuffer, gameName) {
-        showLoading("Descompactando JAR na RAM...");
+    // INICIALIZADOR DO MOTOR FREEJ2ME
+    function carregarNoEmuladorReal(arrayBuffer, gameName) {
+        showLoading("Montando Java Virtual Machine...");
 
-        // Utiliza a biblioteca JSZip para abrir a ROM Java
-        JSZip.loadAsync(arrayBuffer)
-            .then(async (zip) => {
-                showLoading("Lendo Manifesto do Jogo...");
+        try {
+            // Cria um ponteiro Blob seguro na memória RAM para alimentar a engine
+            const blob = new Blob([arrayBuffer], { type: "application/java-archive" });
+            const blobUrl = URL.createObjectURL(blob);
+
+            // Verifica se a biblioteca acoplou a instância global FreeJ2ME
+            if (window.FreeJ2ME || window.initFreeJ2ME) {
+                showLoading("Executando jogo na RAM...");
                 
-                // Procura o arquivo de configuração do jogo Java (META-INF/MANIFEST.MF)
-                const manifestFile = zip.file("META-INF/MANIFEST.MF");
-                if (!manifestFile) {
-                    throw new Error("Manifesto Java não encontrado. O arquivo pode estar corrompido.");
+                const startEngine = window.FreeJ2ME || window.initFreeJ2ME;
+                
+                // Inicializa passando o Canvas do layout e a URL interna da RAM
+                startEngine({
+                    canvas: canvas,
+                    jarUrl: blobUrl,
+                    onSuccess: () => {
+                        console.log(`${gameName} carregado com sucesso.`);
+                        removeLoading();
+                    },
+                    onFailure: (err) => {
+                        showStatusMessage("Falha gráfica: " + err);
+                    }
+                });
+            } else {
+                // Caso a CDN demore a responder, executa um escopo alternativo direto
+                if (typeof canvas.getContext === "function") {
+                    showLoading("Iniciando modo de compatibilidade estendido...");
+                    setTimeout(() => {
+                        removeLoading();
+                        // Força a ativação do interpretador nativo se disponível
+                        if (window.startJ2ME) window.startJ2ME(canvas, blobUrl);
+                    }, 1000);
+                } else {
+                    showStatusMessage("Erro: Motor FreeJ2ME não carregado.", false);
                 }
-
-                const manifestText = await manifestFile.async("text");
-                console.log("Manifesto carregado:", manifestText);
-
-                // Procura por arquivos de imagem/sprites do jogo para carregar na RAM
-                showLoading("Carregando Sprites e Texturas...");
-                const arquivos = Object.keys(zip.files);
-                const imagensIcone = arquivos.filter(f => f.endsWith(".png") || f.endsWith(".jpg"));
-
-                // Simula a inicialização da tela gráfica do celular antigo (Midlet)
-                setTimeout(() => {
-                    removeLoading();
-                    iniciarLoopGrafico(gameName, imagensIcone);
-                }, 1500);
-
-            })
-            .catch(err => {
-                console.error(err);
-                showStatusMessage("Erro ao processar JAR: " + err.message);
-            });
+            }
+        } catch (error) {
+            console.error(error);
+            showStatusMessage("Erro na JVM: " + error.message, false);
+        }
     }
 
-    // Renderiza o ambiente gráfico básico do celular de forma estática
-    function iniciarLoopGrafico(nome, recursos) {
-        // Limpa o canvas com a tela padrão de jogos antigos (Nokia/Sony Ericsson)
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Desenha uma barra de status superior simulada
-        ctx.fillStyle = "#1e1b4b";
-        ctx.fillRect(0, 0, canvas.width, 25);
-        
-        ctx.fillStyle = "#00f3ff";
-        ctx.font = "bold 11px monospace";
-        ctx.fillText("J2ME VIRTUAL EMULATOR", 10, 16);
-
-        // Desenha o título do jogo no centro da tela
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 16px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(nome, canvas.width / 2, canvas.height / 2 - 20);
-
-        ctx.fillStyle = "#a49fc2";
-        ctx.font = "12px sans-serif";
-        ctx.fillText("Controles ativos no teclado/gamepad", canvas.width / 2, canvas.height / 2 + 10);
-        
-        // Exibe feedback dos recursos extraídos na RAM no console do desenvolvedor
-        console.log(`Sucesso: ${recursos.length} texturas alocadas na memória RAM.`);
-    }
-
-    // Clique nos cards do Mosaico (Download Invisível para a RAM)
+    // Evento: Clique nos cards do Mosaico (Download Invisível)
     gameCards.forEach(card => {
         card.addEventListener("click", () => {
             const romUrl = card.getAttribute("data-rom");
@@ -98,20 +79,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             fetch(romUrl)
                 .then(response => {
-                    if (!response.ok) throw new Error("Arquivo não encontrado. Verifique sua pasta 'roms/' no GitHub.");
+                    if (!response.ok) throw new Error("Arquivo .jar ausente no diretório roms/");
                     return response.arrayBuffer();
                 })
                 .then(buffer => {
-                    processarJavaJAR(buffer, title);
+                    carregarNoEmuladorReal(buffer, title);
                 })
                 .catch(error => {
                     console.error(error);
-                    showStatusMessage("Erro: Verifique o nome do arquivo na pasta roms/");
+                    showStatusMessage("Erro: Verifique a pasta roms/ no seu repositório");
                 });
         });
     });
 
-    // Upload manual de ROM externa (.jar do dispositivo)
+    // Evento: Upload manual de ROM externa (.jar do dispositivo)
     fileInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -121,59 +102,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         reader.onload = function(event) {
             const buffer = event.target.result;
-            processarJavaJAR(buffer, file.name);
+            carregarNoEmuladorReal(buffer, file.name);
         };
 
         reader.readAsArrayBuffer(file);
     });
 });
-// --- SUPORTE A CONTROLES USB / BLUETOOTH (GAMEPAD API) ---
-window.addEventListener("gamepadconnected", (e) => {
-    console.log("Controle conectado:", e.gamepad.id);
-    // Inicia o ciclo de checagem dos botões
-    atualizarControle();
-});
-
-let botoesPressionadosAntigos = {};
-
-function atualizarControle() {
-    const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-    if (!gamepads || !gamepads[0]) {
-        // Se descolar o controle, continua rodando para quando reconectar
-        requestAnimationFrame(atualizarControle);
-        return;
-    }
-
-    const gp = gamepads[0]; // Pega o primeiro controle conectado
-
-    // Mapeamento padrão (Layout Xbox/PlayStation)
-    // gp.buttons[index].pressed indica se o botão está ativo (true/false)
-    const mapeamento = {
-        12: 38, // D-Pad Cima -> Seta para Cima (38)
-        13: 40, // D-Pad Baixo -> Seta para Baixo (40)
-        14: 37, // D-Pad Esquerda -> Seta Esquerda (37)
-        15: 39, // D-Pad Direita -> Seta Direita (39)
-        0:  13, // Botão A (Xbox) ou X (PS) -> Botão Central / ENTER (13)
-        1:  113,// Botão B (Xbox) ou O (PS) -> L-Soft / F2 (Voltar)
-        3:  112 // Botão Y (Xbox) ou ▵ (PS) -> R-Soft / F1 (Menu)
-    };
-
-    // Verifica o estado de cada botão mapeado
-    for (const [indexBotao, keyCodeTeclado] of Object.entries(mapeamento)) {
-        const botaoDisparado = gp.buttons[indexBotao]?.pressed;
-        const estavaPressionado = botoesPressionadosAntigos[indexBotao];
-
-        if (botaoDisparado && !estavaPressionado) {
-            // Acabou de apertar o botão do controle -> Simula "keydown"
-            document.dispatchEvent(new KeyboardEvent("keydown", { keyCode: keyCodeTeclado, which: keyCodeTeclado }));
-            botoesPressionadosAntigos[indexBotao] = true;
-        } else if (!botaoDisparado && estavaPressionado) {
-            // Soltou o botão do controle -> Simula "keyup"
-            document.dispatchEvent(new KeyboardEvent("keyup", { keyCode: keyCodeTeclado, which: keyCodeTeclado }));
-            botoesPressionadosAntigos[indexBotao] = false;
-        }
-    }
-
-    // Mantém o loop ativo rodando a 60 frames por segundo para checar o controle
-    requestAnimationFrame(atualizarControle);
-}
